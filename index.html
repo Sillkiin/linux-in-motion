@@ -72,6 +72,16 @@ dialog{background:#fff;border-color:#dce7f8;box-shadow:0 24px 110px #0a1e5045;bo
 @media(max-width:380px){.brand{font-size:14px}.brand-mark{width:30px;height:30px}.menu-button{font-size:13px;padding:8px}.toplinks{gap:5px}.topbar{padding-left:12px;padding-right:12px}.mobile-dock{gap:6px}.mobile-dock button{font-size:13px}}
 @media(orientation:landscape) and (max-height:560px) and (hover:none){.topbar{position:relative}.stage{max-height:65dvh}.cinema{max-width:680px;margin:auto}.diagram-dialog{max-height:calc(100dvh - 16px)}#zoomCanvas,#zoomCanvas svg{width:760px}}
 
+/* Fit content itself instead of hiding horizontal overflow. */
+.diagram-dialog #zoomScroll{overflow:visible;min-width:0}
+#zoomCanvas,#zoomCanvas svg{width:100%;max-width:100%;min-width:0}
+.zoom-steps{margin:18px 0 0;padding-left:24px;font-size:16px;line-height:1.8;color:#496b96}
+.zoom-steps li{padding:9px 0;overflow-wrap:anywhere}
+.terminal,.terminal-output,.terminal-form,.command-card,.practice,.microtest,.explanation{min-width:0;max-width:100%}
+.terminal-output{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
+.phone-scene,.quiz-option,.action,.command-card code,.caption,dialog p{overflow-wrap:anywhere}
+@media(max-width:1050px){#chapters{flex-wrap:wrap;overflow:visible}.chapter{max-width:100%}.chapter-title button{white-space:normal}}
+
 </style>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="icon" href="icons/icon-192.png"><link rel="manifest" href="manifest.webmanifest"></head>
 <body>
@@ -124,7 +134,7 @@ dialog{background:#fff;border-color:#dce7f8;box-shadow:0 24px 110px #0a1e5045;bo
 </div>
 <nav class="mobile-dock mobile-only" aria-label="Управление уроком"><button id="phonePrev" aria-label="Назад к предыдущей сцене">← Назад</button><button id="phonePlay" aria-label="Включить анимацию">▶ Смотреть</button><button id="phoneNext" aria-label="Вперёд к следующей сцене">Дальше →</button></nav>
 <dialog id="lessonsDialog" class="lessons-dialog"><button class="close" aria-label="Закрыть список уроков">×</button><span class="eyebrow">ТВОЙ МАРШРУТ</span><h2>Все уроки</h2><p id="phoneProgress"></p><div id="phoneChapters"></div><div class="phone-doclinks"><a data-doc="UBUNTU_FROM_ZERO.html">Полная инструкция ↗</a><a data-doc="LINUX_WORDS.html">Словарь простыми словами ↗</a></div></dialog>
-<dialog id="diagramDialog" class="diagram-dialog"><button class="close" aria-label="Закрыть увеличенную схему">×</button><h2>Рассмотри схему</h2><p>Проведи по рисунку вбок. Можно повернуть телефон горизонтально.</p><div id="zoomScroll"><div id="zoomCanvas"></div></div><p id="zoomCaption"></p></dialog>
+<dialog id="diagramDialog" class="diagram-dialog"><button class="close" aria-label="Закрыть увеличенную схему">×</button><h2>Рассмотри схему</h2><p>Вся схема помещается по ширине экрана. Ниже — те же действия крупным текстом.</p><div id="zoomScroll"><div id="zoomCanvas"></div></div><p id="zoomCaption"></p><ol id="zoomSteps" class="zoom-steps"></ol></dialog>
 <dialog id="wordDialog"><button class="close" aria-label="Закрыть объяснение">×</button><span class="eyebrow">БЕЗ СЛОЖНЫХ СЛОВ</span><h2 id="wordTitle"></h2><p id="wordText"></p><a data-doc="LINUX_WORDS.html">Открыть весь словарь ↗</a></dialog>
 <dialog id="helpDialog"><button class="close" aria-label="Закрыть подсказку">×</button><span class="eyebrow">КАК СМОТРЕТЬ</span><h2>В своём темпе</h2><p>В учебнике 7 блоков. В каждом: короткие сцены, пояснения и проверка из 3 вопросов. Нажми «Смотреть», чтобы запустить движение. В конце блока показ остановится и предложит проверить себя.</p><p>Нажми «Пауза», чтобы рассмотреть схему. Ползунок под картинкой перемещает действие вперёд и назад. «Повторить» запускает текущую сцену сначала.</p><p>Кнопки слева открывают любой момент. Незнакомые подчёркнутые слова в объяснении можно нажать. Под некоторыми сценами есть упражнение. Тест можно пропустить или повторить; неверный ответ сопровождается подсказкой.</p><p>Результаты проверки сохраняются только в этом браузере, если он разрешает локальное сохранение. Терминальные команды и личные данные не сохраняются. В конце есть учебная командная строка с заданиями.</p><p>Озвучивание работает, если в браузере доступен голос на русском языке. Основные объяснения всегда видны текстом.</p><p><b>Это тренажёр:</b> он не форматирует накопители, не подключается к серверу и не выполняет команды на твоём компьютере. Настоящая установка подробно описана в соседней инструкции.</p></dialog>
 
@@ -474,7 +484,7 @@ function showLessons(){
 function initPhone(){
  $('#lessonsMenu').onclick=showLessons;$('#phonePlay').onclick=()=>setPlaying(!playing);
  $('#phonePrev').onclick=()=>{go(index-1,false);window.scrollTo({top:0,behavior:'auto'});};$('#phoneNext').onclick=()=>{go(index+1,false);window.scrollTo({top:0,behavior:'auto'});};
- $('#zoomDiagram').onclick=()=>{setPlaying(false);$('#zoomCanvas').innerHTML=$('#stage').innerHTML;$('#zoomCaption').textContent=$('#caption').textContent;$('#diagramDialog').showModal();$('#zoomScroll').scrollLeft=0;};
+ $('#zoomDiagram').onclick=()=>{setPlaying(false);$('#zoomCanvas').innerHTML=$('#stage').innerHTML;$('#zoomCaption').textContent=$('#caption').textContent;$('#zoomSteps').innerHTML=scenes[index].cues.map(t=>`<li>${esc(t)}</li>`).join('');$('#diagramDialog').showModal();};
  document.addEventListener('focusin',e=>{if(e.target.matches('input[type="text"],input:not([type]),textarea'))document.body.classList.add('keyboard-open');});
  document.addEventListener('focusout',()=>setTimeout(()=>{if(!document.activeElement?.matches('input[type="text"],input:not([type]),textarea'))document.body.classList.remove('keyboard-open');},100));
  if(!document.fullscreenEnabled)$('#fullscreen').hidden=true;
